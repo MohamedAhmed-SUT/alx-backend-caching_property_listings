@@ -1,6 +1,9 @@
+import logging
 from django.core.cache import cache
 from django_redis import get_redis_connection
 from .models import Property
+
+logger = logging.getLogger(__name__)
 
 def get_all_properties():
     """Get all properties with low-level Redis caching (1 hour)."""
@@ -19,8 +22,8 @@ def get_redis_cache_metrics():
     hits = info.get("keyspace_hits", 0)
     misses = info.get("keyspace_misses", 0)
 
-    total = hits + misses
-    hit_ratio = (hits / total) if total > 0 else 0
+    total_requests = hits + misses
+    hit_ratio = hits / total_requests if total_requests > 0 else 0
 
     metrics = {
         "hits": hits,
@@ -28,7 +31,10 @@ def get_redis_cache_metrics():
         "hit_ratio": round(hit_ratio, 2),
     }
 
-    # تقدر تطبعها للـ logs كمان
-    print(f"Cache Metrics: {metrics}")
+    # سجل الميتريكس باستخدام logger
+    try:
+        logger.error(f"Cache Metrics: {metrics}")
+    except Exception as e:
+        logger.error(f"Error logging cache metrics: {e}")
 
     return metrics
